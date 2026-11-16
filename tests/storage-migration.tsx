@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import { AppProvider, useStore } from "../src/store";
+import { AppProvider, useStore } from "../src/shared/model/store";
 
 function Probe() {
   const store = useStore();

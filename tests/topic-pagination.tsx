@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
-import { TopicPage } from "../src/pages/Discover";
-import { AppProvider } from "../src/store";
-import type { TopicDetail, VideoCard } from "../src/types";
+import { TopicPage } from "../src/features/discover/Discover";
+import { AppProvider } from "../src/shared/model/store";
+import type { TopicDetail, VideoCard } from "../src/shared/api/types";
 import "../src/index.css";
 
 type PendingTopic = {

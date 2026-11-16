@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client";
-import { ChannelPage } from "../src/pages/Category";
-import { AppProvider } from "../src/store";
+import { ChannelPage } from "../src/features/category/Category";
+import { AppProvider } from "../src/shared/model/store";
 import "../src/index.css";
 
 const page1Ids = [12, 117, 2833, 323, 7628, 2181, 4466, 89, 5000, 903, 6000, 445, 123, 800, 701, 60, 1000, 3000, 20, 40];

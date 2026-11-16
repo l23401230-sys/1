@@ -1,7 +1,7 @@
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { Modal, Sheet } from "../../src/components/ios/overlays";
-import { registerOverlayBack, runBack, setBackHandler } from "../../src/back";
+import { Modal, Sheet } from "../../src/shared/ui/ios/overlays";
+import { registerOverlayBack, runBack, setBackHandler } from "../../src/shared/lib/back";
 
 const events = { closed: [] as string[], escapedToPage: 0 };
 

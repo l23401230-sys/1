@@ -146,7 +146,13 @@ async function speedMenuKeyboardChecks(page, paused) {
   await assertSelection(1);
 }
 async function gestureChecks(page) {
-  await loadPlayer(page);
+  await page.goto(`${report.ui}/tests/player-seek.html?diagnostics=1&proxy=${encodeURIComponent(report.media)}`);
+  const guide = page.getByRole("dialog", { name: "视频长按操作提示", exact: true });
+  await guide.waitFor({ state: "visible" });
+  await page.waitForFunction(() => document.querySelector("video")?.paused);
+  await guide.getByRole("button", { name: "知道了", exact: true }).click();
+  await guide.waitFor({ state: "hidden" });
+  await page.waitForFunction(() => document.querySelector("video")?.currentTime > 1 && !document.querySelector("video").paused);
   const video = page.locator('video');
   const tap = () => page.evaluate(() => {
     const surface = document.querySelector('video').parentElement.parentElement;
@@ -177,6 +183,10 @@ async function seekChecks(page, legacy) {
   await clickProgress(page, .1);
   assert.equal((await getLogs(page)).length, 0, "Default-off must not record seeks");
   await page.getByRole("button", { name: "诊断设置", exact: true }).click();
+  const diagnostics = page.getByRole("button", { name: "播放诊断设置", exact: true });
+  assert.equal(await diagnostics.getAttribute("aria-expanded"), "false");
+  await diagnostics.click();
+  assert.equal(await diagnostics.getAttribute("aria-expanded"), "true");
   await page.getByRole("switch", { name: "播放诊断日志", exact: true }).click();
   await page.waitForFunction(() => document.querySelector('[aria-label="播放诊断日志"]').getAttribute("aria-checked") === "true");
   await page.getByRole("button", { name: "诊断设置", exact: true }).click();
@@ -369,13 +379,26 @@ async function lifecyclePlayerCheck(page, legacy) {
 async function lifecycleCheck(page) {
   const feed = await lifecyclePlayerCheck(page, false);
   const legacy = await lifecyclePlayerCheck(page, true);
-  // The video mounts after the parent's inactive effect, just like a late API response.
-  await page.goto(`${report.ui}/tests/player-seek.html?diagnostics=1&inactive=1&proxy=${encodeURIComponent(report.media)}`);
-  await page.waitForFunction(() => document.querySelector("video") && window.playerSeekFixture.engineState().levels > 0);
-  await page.waitForTimeout(350);
-  assert(await page.locator("video").evaluate(v => v.paused), "Late-mounted inactive player must not autoplay");
-  assert.equal(await page.evaluate(() => window.playerSeekFixture.engineState().loading), false);
-  return { feed, legacy, late_mount_paused: true };
+  const lateMount = [];
+  for (const legacy of [false, true]) {
+    // Feed intentionally defers its play API while inactive. Mount each real
+    // player with a known source only after the parent has become inactive.
+    await page.goto(`${report.ui}/tests/player-seek.html?diagnostics=1&delayed-mount=1&proxy=${encodeURIComponent(report.media)}${legacy ? "&legacy=1" : ""}`);
+    await page.locator('[data-player-fixture][data-active="true"]').waitFor();
+    await page.evaluate(async () => { await window.playerSeekFixture.setLogging(true); window.playerSeekFixture.setActive(false); });
+    await page.locator('[data-player-fixture][data-active="false"]').waitFor();
+    assert.equal(await page.locator("video").count(), 0, "Parent must become inactive before the player mounts");
+    await page.evaluate(() => window.playerSeekFixture.setMounted(true));
+    const logs = await waitLog(page, "hls.manifest");
+    assert(await page.locator("video").evaluate(v => v.paused), "Late-mounted inactive player must not autoplay");
+    assert.equal(await page.evaluate(() => window.playerSeekFixture.engineState().loading), false, "Late-mounted inactive player must not load fragments");
+    assert(!logs.some(e => e.event === "play.request"), "Late-mounted autoplay must be gated before calling play()");
+    assert(!logs.some(e => e.event === "hlsFragLoading"), "Late-mounted inactive player must not request fragments");
+    await page.evaluate(() => window.playerSeekFixture.setActive(true));
+    await page.waitForFunction(() => document.querySelector("video").currentTime > 1 && !document.querySelector("video").paused);
+    lateMount.push({ player: legacy ? "legacy" : "video_surface", inactive_paused: true, inactive_fragment_loading: false, activated_playback: true });
+  }
+  return { feed, legacy, late_mount_paused: true, late_mount: lateMount };
 }
 
 async function proxyRecoveryCheck(page) {

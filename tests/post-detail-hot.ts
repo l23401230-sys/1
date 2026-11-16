@@ -1,4 +1,4 @@
-import { postHot } from "../src/postData";
+import { postHot } from "../src/features/posts/postData";
 
 const results = {
   detailNullUsesCount: postHot({ hot: null, counts: { hot: 4321 } }),

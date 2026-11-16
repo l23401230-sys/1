@@ -11,7 +11,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 let vite;
 let browser;
 try {
-  const postsSource = await readFile(join(root, "src", "pages", "Posts.tsx"), "utf8");
+  const postsSource = await readFile(join(root, "src", "features", "posts", "Posts.tsx"), "utf8");
   assert.match(postsSource, /fmt\(postHot\(currentPost\)\)/, "PostDetail must render the normalized hot count");
   assert.doesNotMatch(postsSource, /fmt\(currentPost\.hot\)/, "PostDetail must not format a nullable hot value directly");
 

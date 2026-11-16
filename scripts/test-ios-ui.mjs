@@ -106,7 +106,7 @@ try {
     };
     const returnFromOverlay = async () => {
       if (test.android) await page.evaluate(() => window.__IOS_UI_FIXTURE__.hardwareBack());
-      else assert.equal(await page.evaluate(async () => (await import("/src/back.ts")).runBack()), true, "Overlay consumes the shared back handler");
+      else assert.equal(await page.evaluate(async () => (await import("/src/shared/lib/back.ts")).runBack()), true, "Overlay consumes the shared back handler");
     };
     try {
       await page.goto(origin);
